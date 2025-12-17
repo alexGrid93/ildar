@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Fart Pad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="head.png">
+    <title>ILDAR.CLOUD</title>
 
     <style>
         * {
@@ -34,29 +38,74 @@
         }
 
         .start-button {
-            padding: 22px 32px;
-            border-radius: 20px;
-            background: linear-gradient(145deg, #ffffff, #d6d6d6);
-            color: #000;
-            font-size: 18px;
-            font-weight: 600;
-            box-shadow:
-                0 10px 30px rgba(0, 0, 0, 0.6),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            width: 220px;
+            height: 70px;
+            font-family: "Baloo 2", sans-serif;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(180deg,
+                    #fff 0%,
+                    #fff 45%,
+                    #fff 100%);
+
+            border-radius: 22px;
+
+
+            color: #2b2000;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+
+
+            cursor: pointer;
+            user-select: none;
         }
 
         .start-button:active {
-            transform: scale(0.95);
+            transform: translateY(8px);
+            box-shadow:
+                0 2px 0 #a67c00,
+                0 6px 14px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+            filter: brightness(0.95);
         }
+
 
         /* ---------- GRID ---------- */
 
+        .main {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ---------- HEAD IMAGE ---------- */
+
+        .head-image {
+            height: 150px;
+            margin: 10px 0 12px;
+            flex-shrink: 0;
+        }
+
+        /* ---------- PAD ---------- */
+
         .pad {
+            flex: 1;
+            /* ← КЛЮЧЕВОЕ */
+            width: 100%;
+
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 14px;
+
             padding: 16px;
-            height: 100%;
+            max-width: 520px;
+
             align-content: center;
         }
 
@@ -109,72 +158,169 @@
         .row-4 {
             background: linear-gradient(145deg, #c85a5a, #7f2f2f);
         }
+
+
+        .start-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 26px;
+        }
+
+        h1 {
+            color: white;
+            display: flex;
+            justify-content: center;
+            font-family: "Baloo 2", sans-serif;
+            font-size: 40px;
+            font-weight: 800;
+        }
+
+        .start-logo {
+            max-width: 60vw;
+            height: auto;
+            filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8));
+            user-select: none;
+            pointer-events: none;
+        }
     </style>
 </head>
 
 <body>
 
+
+
     <!-- START -->
     <div class="start-screen" id="startScreen">
-        <div class="start-button" id="startButton">
-            пук
+
+        <div class="start-content">
+            <h1>ILDAR.CLOUD</h1>
+            <img src="main.png" alt="Fart Pad Logo" class="start-logo" />
+            <div class="start-button" id="startButton">
+                пук
+            </div>
         </div>
     </div>
 
     <!-- PAD -->
-    <div class="pad" id="pad"></div>
+    <div class="main">
+        <h1>ILDAR.CLOUD</h1>
+
+        <img src="head.png" alt="head" class="head-image" />
+
+        <div class="pad" id="pad"></div>
+    </div>
 
     <script>
         /* ---------- AUDIO ---------- */
 
         let audioCtx = null;
         let buffers = [];
+        let isAudioReady = false;
 
-        const sounds = Array(16).fill("sounds/low1.mp3");
+        const sounds = [
+            // НИЖНИЙ РЯД (бас)
+            "sounds/1.mp3",
+            "sounds/2.mp3",
+            "sounds/3.mp3",
+
+            // ТЕЛО
+            "sounds/4.mp3",
+            "sounds/5.mp3",
+            "sounds/6.mp3",
+
+            // АКЦЕНТЫ
+            "sounds/7.mp3",
+            "sounds/8.mp3",
+            "sounds/9.mp3",
+
+            // ВЕРХ
+            "sounds/10.mp3",
+            "sounds/11.mp3",
+            "sounds/12.mp3",
+        ];
 
         async function initAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            buffers = [];
 
-            for (const url of sounds) {
-                const res = await fetch(url);
-                const data = await res.arrayBuffer();
-                buffers.push(await audioCtx.decodeAudioData(data));
+            for (let i = 0; i < sounds.length; i++) {
+                const res = await fetch(sounds[i]);
+                const arrayBuffer = await res.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                buffers.push(audioBuffer);
             }
+
+            isAudioReady = true;
         }
 
         function playSound(index) {
+            if (!isAudioReady || !buffers[index]) return;
+
             const source = audioCtx.createBufferSource();
             source.buffer = buffers[index];
             source.connect(audioCtx.destination);
-            source.start();
+            source.start(0);
         }
 
         /* ---------- UI ---------- */
+
+        const headImage = document.querySelector(".head-image");
+
+        const HEAD_DEFAULT = "head.png";
+        const HEAD_ACTIVE = "head_1.png";
+
+        let headTimeout = null;
+
+        function animateHead() {
+            if (!headImage) return;
+
+            // если уже анимируется — сбрасываем таймер
+            if (headTimeout) {
+                clearTimeout(headTimeout);
+            }
+
+            headImage.src = HEAD_ACTIVE;
+
+            headTimeout = setTimeout(() => {
+                headImage.src = HEAD_DEFAULT;
+                headTimeout = null;
+            }, 400);
+        }
 
         const pad = document.getElementById("pad");
         const startScreen = document.getElementById("startScreen");
         const startButton = document.getElementById("startButton");
 
         function createPads() {
-            for (let i = 0; i < 16; i++) {
+            pad.innerHTML = "";
+
+            const padsPerRow = 3;
+
+            for (let i = 0; i < sounds.length; i++) {
                 const btn = document.createElement("div");
 
-                const rowFromBottom = Math.floor(i / 4) + 1;
+                const rowFromBottom = Math.floor(i / padsPerRow) + 1;
                 const rowClass = "row-" + (5 - rowFromBottom);
 
                 btn.className = "pad-button " + rowClass;
 
+                btn.addEventListener(
+                    "touchstart",
+                    e => {
+                        e.preventDefault();
 
-                btn.addEventListener("touchstart", e => {
-                    e.preventDefault();
+                        btn.classList.add("is-active");
+                        playSound(i);
+                        animateHead(); // ← ВАЖНО
 
-                    btn.classList.add("is-active");
-                    playSound(i);
+                        setTimeout(() => {
+                            btn.classList.remove("is-active");
+                        }, 140);
+                    },
+                    { passive: false }
+                );
 
-                    setTimeout(() => {
-                        btn.classList.remove("is-active");
-                    }, 140);
-                }, { passive: false });
 
                 pad.appendChild(btn);
             }
@@ -182,15 +328,22 @@
 
         /* ---------- START ---------- */
 
-        startButton.addEventListener("touchstart", async e => {
-            e.preventDefault();
+        startButton.addEventListener(
+            "touchstart",
+            async e => {
+                e.preventDefault();
 
-            await initAudio();
-            createPads();
-
-            startScreen.style.display = "none";
-        }, { passive: false });
+                if (!isAudioReady) {
+                    await initAudio();
+                    createPads();
+                    startScreen.style.display = "none";
+                }
+            },
+            { passive: false }
+        );
     </script>
+
+
 </body>
 
 </html>
