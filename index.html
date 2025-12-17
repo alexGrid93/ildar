@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Fart Pad</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: radial-gradient(circle at top, #1a1a1a, #050505);
+            font-family: system-ui, sans-serif;
+            touch-action: manipulation;
+        }
+
+        /* ---------- START SCREEN ---------- */
+
+        .start-screen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, #222, #000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .start-button {
+            padding: 22px 32px;
+            border-radius: 20px;
+            background: linear-gradient(145deg, #ffffff, #d6d6d6);
+            color: #000;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .start-button:active {
+            transform: scale(0.95);
+        }
+
+        /* ---------- GRID ---------- */
+
+        .pad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            padding: 16px;
+            height: 100%;
+            align-content: center;
+        }
+
+        /* ---------- PAD ---------- */
+
+        .pad-button {
+            aspect-ratio: 1 / 1;
+            border-radius: 18px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            user-select: none;
+            touch-action: none;
+
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                inset 0 -6px 12px rgba(0, 0, 0, 0.35),
+                0 10px 25px rgba(0, 0, 0, 0.55);
+
+            transition:
+                transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                filter 140ms ease,
+                box-shadow 140ms ease;
+        }
+
+        .pad-button.is-active {
+            transform: scale(0.9);
+            filter: brightness(1.35) saturate(1.25);
+        }
+
+        /* ---------- ROW COLORS ---------- */
+
+        .row-1 {
+            background: linear-gradient(145deg, #3b4a9e, #27306d);
+        }
+
+        .row-2 {
+            background: linear-gradient(145deg, #2f8f5f, #1f5f3e);
+        }
+
+        .row-3 {
+            background: linear-gradient(145deg, #c9a23f, #8c6f1f);
+        }
+
+        .row-4 {
+            background: linear-gradient(145deg, #c85a5a, #7f2f2f);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- START -->
+    <div class="start-screen" id="startScreen">
+        <div class="start-button" id="startButton">
+            пук
+        </div>
+    </div>
+
+    <!-- PAD -->
+    <div class="pad" id="pad"></div>
+
+    <script>
+        /* ---------- AUDIO ---------- */
+
+        let audioCtx = null;
+        let buffers = [];
+
+        const sounds = Array(16).fill("sounds/low1.mp3");
+
+        async function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            for (const url of sounds) {
+                const res = await fetch(url);
+                const data = await res.arrayBuffer();
+                buffers.push(await audioCtx.decodeAudioData(data));
+            }
+        }
+
+        function playSound(index) {
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffers[index];
+            source.connect(audioCtx.destination);
+            source.start();
+        }
+
+        /* ---------- UI ---------- */
+
+        const pad = document.getElementById("pad");
+        const startScreen = document.getElementById("startScreen");
+        const startButton = document.getElementById("startButton");
+
+        function createPads() {
+            for (let i = 0; i < 16; i++) {
+                const btn = document.createElement("div");
+
+                const rowFromBottom = Math.floor(i / 4) + 1;
+                const rowClass = "row-" + (5 - rowFromBottom);
+
+                btn.className = "pad-button " + rowClass;
+
+
+                btn.addEventListener("touchstart", e => {
+                    e.preventDefault();
+
+                    btn.classList.add("is-active");
+                    playSound(i);
+
+                    setTimeout(() => {
+                        btn.classList.remove("is-active");
+                    }, 140);
+                }, { passive: false });
+
+                pad.appendChild(btn);
+            }
+        }
+
+        /* ---------- START ---------- */
+
+        startButton.addEventListener("touchstart", async e => {
+            e.preventDefault();
+
+            await initAudio();
+            createPads();
+
+            startScreen.style.display = "none";
+        }, { passive: false });
+    </script>
+</body>
+
+</html>
