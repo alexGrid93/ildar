@@ -256,6 +256,8 @@
             "sounds/12.mp3",
         ];
 
+
+
         async function initAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             buffers = [];
@@ -267,6 +269,30 @@
                 buffers.push(audioBuffer);
             }
 
+            isAudioReady = true;
+        }
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                audioCtx.resume(); // критично для iOS
+
+                const silentBuffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+                const silentSource = audioCtx.createBufferSource();
+                silentSource.buffer = silentBuffer;
+                silentSource.connect(audioCtx.destination);
+                silentSource.start();
+            }
+        }
+
+        async function loadSounds() {
+            const promises = sounds.map(async (url) => {
+                const res = await fetch(url);
+                const buffer = await res.arrayBuffer();
+                return audioCtx.decodeAudioData(buffer);
+            });
+
+            buffers = await Promise.all(promises);
             isAudioReady = true;
         }
 
@@ -346,14 +372,16 @@
 
         startButton.addEventListener(
             "touchstart",
-            async e => {
+            e => {
                 e.preventDefault();
 
-                if (!isAudioReady) {
-                    await initAudio();
-                    createPads();
-                    startScreen.style.display = "none";
-                }
+                // 1️⃣ мгновенно
+                initAudioContext();
+                createPads();
+                startScreen.style.display = "none";
+
+                // 2️⃣ в фоне
+                loadSounds();
             },
             { passive: false }
         );
